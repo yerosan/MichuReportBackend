@@ -2,6 +2,7 @@ const express=require("express")
 const cors=require("cors")
 const appUrl=require("./src/config/config")
 const userRoute=require("./src/route/userRoute")
+const customerRegisterRoute=require("./src/route/registuringCustomer")
 // const roleRoute=require("./src/route/roleRoute")
 app=express()
 
@@ -23,6 +24,7 @@ app.use(cors({
 
 );
 app.use("/user", userRoute)
+app.use("/customer",customerRegisterRoute)
 // app.use("/collection", collectionRoute)
 // app.use("/role", roleRoute)
 // app.use("/salse", salseRouter)
