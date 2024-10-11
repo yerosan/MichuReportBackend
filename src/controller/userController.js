@@ -59,91 +59,6 @@ const registerUser= async (req,res)=>{
      }
     }
 }
-// const loginUser=async(req, res)=>{
-//     const data=req.body
-//     if (!data.userName || !data.password){
-//         res.status(200).json({message:"All field are required"})
-//     }else{
-//         try{
-//             const user= await userInfoModel.findOne({where:{userName:data.userName}})
-//             if(user){
-//                 if(await bcrypt.compare(data.password,user.dataValues.password)){
-//                     payload={userName:user.dataValues.userName}
-//                     let token=createAccessToken(payload)
-//                     user.dataValues.token=token
-//                     res.status(200).json({message:"succeed",data:user})
-//                 }else{
-//                     res.status(200).json({message:"Incorrect password"})
-//                 }
-//             }else{
-//                 res.status(200).json({message:"User not found please register"})
-//             }
-
-//         }catch(erro){
-//             res.status(500).json({message:"An internal error"})
-//             console.log("An internal error", erro)
-//         }
-//     }
-// }
-
-
-
-// const loginUser = async (req, res) => {
-//     const data = req.body;
-//     if (!data.userName || !data.password) {
-//         res.status(200).json({ message: "All fields are required" });
-//     } else {
-//         try {
-//             const user = await userInfoModel.findOne({ where: { userName: data.userName } });
-//             const crmUser= await crmUserModel.findOne({where: {  username: data.userName }})
-//             if (user) {
-//                 const hashedPassword = hashPassword(data.password); // Hash the password
-//                 if (hashedPassword === user.dataValues.password) { // Compare hashed passwords
-//                     const payload = { userName: user.dataValues.userName };
-//                     const roles= await roleListModel.findOne({where:{role_Id:user.dataValues.role}})
-//                     console.log("These role_-----------", roles)
-//                     if (roles){
-//                         let token = createAccessToken(payload);
-//                         user.dataValues.roleName=roles.dataValues.role
-//                         user.dataValues.token = token;
-//                         res.status(200).json({ message: "succeed", data: user });
-//                     }else{
-//                         res.status(200).json({message:"Unable to access role"})
-//                     }
-//                 } else {
-//                     res.status(200).json({ message: "Incorrect password" });
-//                 }
-//             } 
-//             else if(crmUser){
-//                 const hashedPassword = hashPassword(data.password); // Hash the password
-//                 if (hashedPassword === crmUser.dataValues.crm_password) { // Compare hashed passwords
-//                     const payload = { userName: crmUser.dataValues.username };
-//                     const crm_roles= await crmlistModel.findOne({where:{employe_id:crmUser.dataValues.employe_id}})
-//                     console.log("These role_-----------", crm_roles)
-//                     if (crm_roles){
-//                         let token = createAccessToken(payload);
-//                         crmUser.dataValues.fullName=crm_roles.dataValues.full_name
-//                         crmUser.dataValues.roleName=crm_roles.dataValues.role
-//                         crmUser.dataValues.token = token;
-//                         res.status(200).json({ message: "succeed", data: crmUser });
-//                     }else{
-//                         res.status(200).json({message:"Unable to access role"})
-//                     }
-//                 } else {
-//                     res.status(200).json({ message: "Incorrect password" });
-//                 }
-
-//             }
-//             else {
-//                 res.status(200).json({ message: "User not found, please register" });
-//             }
-//         } catch (error) {
-//             res.status(500).json({ message: "An internal error occurred" });
-//             console.log("An internal error", error);
-//         }
-//     }
-// };
-
 
 
 const loginUser = async (req, res) => {
@@ -178,9 +93,11 @@ const loginUser = async (req, res) => {
                     return res.status(200).json({
                         message: "succeed",
                         data: {
-                            ...user.dataValues,
-                            roleName: roles.dataValues.role,
-                            token
+                            userId:user.dataValues.userId,
+                            userName:user.dataValues.userName,
+                            fullName:user.dataValues.full_Name,
+                            role: roles.dataValues.role,
+                            // token
                         }
                     });
                 } else {
@@ -205,10 +122,12 @@ const loginUser = async (req, res) => {
                     return res.status(200).json({
                         message: "succeed",
                         data: {
-                            ...crmUser.dataValues,
+                            // ...crmUser.dataValues,
+                            userId:crmUser.dataValues.crm_id,
+                            userName:crmUser.dataValues.username,
                             fullName: crmRoles.dataValues.full_name,
-                            roleName: crmRoles.dataValues.role,
-                            token
+                            role: crmRoles.dataValues.role,
+                            // token
                         }
                     });
                 } else {
