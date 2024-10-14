@@ -29,7 +29,7 @@ const registerInformalCustomerModel = async (req, res) => {
 
     // Validation: Ensure all required fields are provided
     if (!dataset.phone_number || !dataset.account_number || !dataset.initial_working_capital) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(200).json({ message: "All fields are required" });
     }
 
     try {
@@ -70,7 +70,7 @@ const registerInformalCustomerModel = async (req, res) => {
 
         // If customer already exists in any of the sources, return conflict error
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
-            return res.status(409).json({ message: "Customer already registered" });
+            return res.status(200).json({ message: "Customer already registered" });
         }
 
         // If no existing customer found, register new customer
@@ -78,9 +78,9 @@ const registerInformalCustomerModel = async (req, res) => {
 
         // If registration succeeds, return success response
         if (registering_customer) {
-            return res.status(201).json({ message: "Registration succeeded", data: registering_customer });
+            return res.status(200).json({ message: "Succeed", data: registering_customer });
         } else {
-            return res.status(500).json({ message: "Unable to register customer" });
+            return res.status(200).json({ message: "Unable to register customer" });
         }
         
     } catch (err) {
@@ -106,7 +106,6 @@ const kiyyaFormalCustomer = async (req, res) => {
     try {
         // Format phone number
         const formattedPhoneNumber = formatPhoneNumber(phone_number);
-        console.log("Formatted Phone Number:", formattedPhoneNumber);
 
         // Query to check if the customer already exists
         const [formalCustomer, informalCustomer, prevCustomer, prev_customer] = await Promise.all([
@@ -153,9 +152,9 @@ const kiyyaFormalCustomer = async (req, res) => {
         });
 
         if (registeringCustomer) {
-            return res.status(201).json({ message: "Registration succeeded", data: registeringCustomer });
+            return res.status(201).json({ message: "Succeed", data: registeringCustomer });
         } else {
-            return res.status(500).json({ message: "Unable to register customer" });
+            return res.status(500).json({ message: "Registration Failed" });
         }
 
     } catch (err) {
@@ -283,7 +282,7 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                     });
 
                     if (registeringCustomer) {
-                        return res.status(201).json({ message: "Registration succeeded", data: registeringCustomer });
+                        return res.status(201).json({ message: "Succeed", data: registeringCustomer });
                     } else {
                         return res.status(500).json({ message: "Unable to register customer" });
                     }
