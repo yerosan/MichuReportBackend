@@ -219,4 +219,3 @@ const changePassword= async(req, res)=>{
 }
 
 module.exports={registerUser,loginUser,changePassword,addUser, getUser}
-// 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
