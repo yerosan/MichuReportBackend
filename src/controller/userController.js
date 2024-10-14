@@ -66,7 +66,7 @@ const loginUser = async (req, res) => {
 
     // Validation: Check if both username and password are provided
     if (!userName || !password) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(200).json({ message: "All fields are required" });
     }
 
     try {
@@ -80,7 +80,6 @@ const loginUser = async (req, res) => {
 
         // If user is found in the main user info system
         if (user) {
-            console.log("The user_inf0 uer_____-")
             // Compare hashed passwords
             if (hashedPassword === user.dataValues.password) {
                 const payload = { userName: user.dataValues.userName };
@@ -101,16 +100,15 @@ const loginUser = async (req, res) => {
                         }
                     });
                 } else {
-                    return res.status(403).json({ message: "Unable to access role" });
+                    return res.status(200).json({ message: "Unable to access role" });
                 }
             } else {
-                return res.status(401).json({ message: "Incorrect password" });
+                return res.status(200).json({ message: "Incorrect password" });
             }
         }
 
         // If user is found in CRM system
         if (crmUser) {
-            console.log("The role uer_____-" )
             if (hashedPassword === crmUser.dataValues.crm_password) {
                 const payload = { userName: crmUser.dataValues.username };
 
@@ -131,15 +129,15 @@ const loginUser = async (req, res) => {
                         }
                     });
                 } else {
-                    return res.status(403).json({ message: "Unable to access role" });
+                    return res.status(200).json({ message: "Unable to access role" });
                 }
             } else {
-                return res.status(401).json({ message: "Incorrect password" });
+                return res.status(200).json({ message: "Incorrect password" });
             }
         }
 
         // If no user is found in either system
-        return res.status(404).json({ message: "User not found, please register" });
+        return res.status(200).json({ message: "User not found, please register" });
         
     } catch (error) {
         console.error("An internal error occurred:", error); // Logging the error

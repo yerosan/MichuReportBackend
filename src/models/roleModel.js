@@ -5,6 +5,7 @@ const Sequelize=require("sequelize")
 const roleModel=sequelize.define("role", {
     userId:{
         type:Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey:true,
         allowNull:false,
     },
