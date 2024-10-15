@@ -167,7 +167,6 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 const uniqueCustomerRegisteration=async(req, res)=>{
     const data=req.body
-    console.log("LOdaf___--", data)
     // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
@@ -272,7 +271,6 @@ const uniqueCustomerRegisteration=async(req, res)=>{
             else{
                     // Register the customer if not found
                     data.Saving_Account=data.Saving_account
-                    console.log("The DAt_________------------", data)
                     const registeringCustomer = await branchCustomerModels.create(data);
 
                     if (registeringCustomer) {
