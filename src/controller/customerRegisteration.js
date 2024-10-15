@@ -106,6 +106,7 @@ const kiyyaFormalCustomer = async (req, res) => {
     try {
         // Format phone number
         const formattedPhoneNumber = formatPhoneNumber(phone_number);
+            
 
         // Query to check if the customer already exists
         const [formalCustomer, informalCustomer, prevCustomer, prev_customer] = await Promise.all([
@@ -152,9 +153,9 @@ const kiyyaFormalCustomer = async (req, res) => {
         });
 
         if (registeringCustomer) {
-            return res.status(201).json({ message: "Succeed", data: registeringCustomer });
+            return res.status(200).json({ message: "Succeed", data: registeringCustomer });
         } else {
-            return res.status(500).json({ message: "Registration Failed" });
+            return res.status(200).json({ message: "Registration Failed" });
         }
 
     } catch (err) {
@@ -166,7 +167,7 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 const uniqueCustomerRegisteration=async(req, res)=>{
     const data=req.body
-
+    console.log("LOdaf___--", data)
     // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
@@ -177,16 +178,11 @@ const uniqueCustomerRegisteration=async(req, res)=>{
         return phoneNumber; // Return as is if no changes are needed
     }
     
-    if (!data.phoneNumber || ! data.Saving_Account){
-        return res.status(400).json({message:"All field is requied"})
+    if (!data.phoneNumber || ! data.Saving_account){
+        return res.status(200).json({message:"All field is requied"})
     }else{
         try{
-
-            // Format phone number
-        const formattedPhoneNumber = formatPhoneNumber(phone_number);
-        // console.log("Formatted Phone Number:", formattedPhoneNumber);
-            
-            // Query to check if the customer already exists
+        const formattedPhoneNumber = formatPhoneNumber(data.phoneNumber);
         const [formalCustomer, informalCustomer, prevCustomer, 
             prev_customer, branchCustomer,customer_list,noneCode,
             actualData,conversionCustomer,uniqueCustomers] = await Promise.all([
@@ -194,7 +190,7 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phone_number: formattedPhoneNumber },
-                        { account_number: data.Saving_Account }
+                        { account_number: data.Saving_account }
                     ]
                 }
             }),
@@ -202,18 +198,18 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phone_number: formattedPhoneNumber },
-                        { account_no :data.Saving_Account}
+                        { account_no :data.Saving_account}
                     ]
                 }
             }),
             conversionModel.findOne({
                 where: {
-                    saving_account: data.Saving_Account,
+                    saving_account: data.Saving_account,
                 }
             }),
             uniqueCustomerModel.findOne({
                 where: {
-                    saving_account: data.saving_account,
+                    saving_account: data.Saving_account,
                 }
             }),
 
@@ -221,7 +217,7 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phoneNumber: formattedPhoneNumber },
-                        { Saving_Account :data.Saving_Account}
+                        { Saving_Account :data.Saving_account}
                     ]
                 }
             }),
@@ -229,7 +225,7 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phone_number: formattedPhoneNumber },
-                        { saving_account :data.Saving_Account}
+                        { saving_account :data.Saving_account}
                     ]
                 }
             }),
@@ -237,15 +233,15 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phone_number: formattedPhoneNumber },
-                        { saving_account :data.Saving_Account}
+                        { saving_account :data.Saving_account}
                     ]
                 }
             }),
             uniqueCustomer.findOne({
                 where: {
                     [Op.or]: [
-                        { phone_number: formattedPhoneNumber },
-                        { saving_account :data.Saving_Account}
+                        { phoneNumber: formattedPhoneNumber },
+                        { Saving_Account :data.Saving_account}
                     ]
                 }
                 
@@ -254,14 +250,14 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 where: {
                     [Op.or]: [
                         { phoneNumber: formattedPhoneNumber },
-                        { Saving_Account :data.Saving_Account}
+                        { Saving_Account :data.Saving_account}
                     ]
                 }
             }),
 
             actualDataModel.findOne({
                 where: {
-                    saving_account: data.saving_account,
+                    saving_account: data.Saving_account,
                 }
             })
 
@@ -271,20 +267,18 @@ const uniqueCustomerRegisteration=async(req, res)=>{
         if (formalCustomer || informalCustomer ||prevCustomer, 
             prev_customer || branchCustomer ||customer_list,noneCode,
             actualData ||conversionCustomer||uniqueCustomers){
-                return res.status(409).json({ message: "Customer already registered" })
+                return res.status(200).json({ message: "Customer already registered" })
             }
             else{
                     // Register the customer if not found
-                    const registeringCustomer = await branchCustomer.create({
-                        phoneNumber: formattedPhoneNumber,
-                        Saving_Account,
-                        ...otherData // Add remaining data from req.body
-                    });
+                    data.Saving_Account=data.Saving_account
+                    console.log("The DAt_________------------", data)
+                    const registeringCustomer = await branchCustomerModels.create(data);
 
                     if (registeringCustomer) {
-                        return res.status(201).json({ message: "Succeed", data: registeringCustomer });
+                        return res.status(200).json({ message: "Succeed", data: registeringCustomer });
                     } else {
-                        return res.status(500).json({ message: "Unable to register customer" });
+                        return res.status(200).json({ message: "Unable to register customer" });
                     }
             }
 

@@ -71,6 +71,7 @@ const branchCustomerModel = sequelize.define("branchcustomer", {
     Disbursed_date: {
         type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.NOW,  // Auto-set current timestamp
     },
 }, {
     timestamps: false,  // Disable automatic createdAt/updatedAt fields

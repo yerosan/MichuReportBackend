@@ -36,6 +36,7 @@ const womenProductCustomerModel = sequelize.define("women_product_customer", {
     registered_date: {
         type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.NOW,  // Auto-set current timestamp
     },
 }, {
     timestamps: false,  // Disable automatic createdAt/updatedAt fields

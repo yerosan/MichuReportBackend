@@ -4,6 +4,7 @@ const router=express.Router()
 
 router.post("/informalRegistery",customerMOdel.registerInformalCustomerModel )
 router.post("/formalRegistery", customerMOdel.kiyyaFormalCustomer)
+router.post("/branchCustomerRegistery", customerMOdel.uniqueCustomerRegisteration)
 
 
 module.exports=router
