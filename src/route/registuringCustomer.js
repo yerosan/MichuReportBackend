@@ -7,10 +7,12 @@ router.post("/formalRegistery", customerMOdel.kiyyaFormalCustomer)
 router.post("/branchCustomerRegistery", customerMOdel.uniqueCustomerRegisteration)
 router.patch("/kiyyaFormalCustomerUpdate",customerMOdel.formalKiyyaCustomerUpdate)
 router.patch("/kiyyaInformalCustomerUpdate",customerMOdel.InformalKiyyaCustomerUpdate)
-router.get("/getInformalKiyyaCustomer", customerMOdel.getDisburesedLoanInformalKiyyaCustomer)
-router.get("/getNone_loanAccessedInFormalKiyyaCustomer", customerMOdel.getNone_DisburesedLoanInformalKiyyaCustomer)
-router.get ("/getFromalKiyyaCustomerAccessedLoan", customerMOdel.getFormalKiyyaCustomerLoanDisbursed)
-router.get("/getFromalKiyyaCustomerNotAccessedLoan", customerMOdel.getNone_DisburesedLoanformalKiyyaCustomer)
+router.post("/getInformalKiyyaCustomer", customerMOdel.getDisburesedLoanInformalKiyyaCustomer)
+router.post("/getNone_loanAccessedInFormalKiyyaCustomer", customerMOdel.getNone_DisburesedLoanInformalKiyyaCustomer)
+router.post ("/getFromalKiyyaCustomerAccessedLoan", customerMOdel.getFormalKiyyaCustomerLoanDisbursed)
+router.post("/getFromalKiyyaCustomerNotAccessedLoan", customerMOdel.getNone_DisburesedLoanformalKiyyaCustomer)
+router.post("/kifiyaData",customerMOdel.registerInformalCustomerModelKifiya)
+router.post("/targetAssigned", customerMOdel.targetAssinged)
 
 
 module.exports=router

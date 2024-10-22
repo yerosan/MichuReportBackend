@@ -14,16 +14,12 @@ const customerListModel = require("../models/customerList");
 const { escape } = require("mysql2");
 const { QueryTypes } = require('sequelize');
 const querys=require("../query/query")
+const targetQuery=require("../query/targetQuery")
 
 const sequelize = require("../db/db");
 // const Sequelize=require("sequelize")
 const registerInformalCustomerModel = async (req, res) => {
     const dataset= req.body;
-
-
-    console.log("Dataset_____---------",dataset)
-
-
     // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
@@ -78,17 +74,128 @@ const registerInformalCustomerModel = async (req, res) => {
         // If customer already exists in any of the sources, return conflict error
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
             return res.status(200).json({ message: "Customer already registered" });
+        }else{
+
+           // If no existing customer found, register new customer
+            const registering_customer = await kiyyaModel.create(dataset);
+
+            // If registration succeeds, return success response
+            if (registering_customer) {
+                return res.status(200).json({ message: "Succeed", data: registering_customer });
+            } else {
+                return res.status(200).json({ message: "Unable to register customer" });
+            }
+        
         }
 
+
+    } catch (err) {
+        console.error("An internal error occurred:", err);  // Log error
+        return res.status(500).json({ message: "An internal error occurred" });
+    }
+};
+
+
+
+
+
+const registerInformalCustomerModelKifiya = async (req, res) => {
+    const dataset= req.body;
+    const formatedData={}
+    formatedData.userId='123e4567-e8fb-12d3-a456-42ls141740dm'
+    formatedData.fullName=dataset['First Name']+" "+dataset['Father Name']+" "+dataset.Surname
+    formatedData.phone_number=dataset['Phone Number']
+    formatedData.account_number=dataset['Bank Account Number']
+    formatedData.customer_ident_type=dataset['Customer ID Type']
+    formatedData.gender=dataset.Gender,
+    formatedData.marital_status=dataset['Marital Status'],
+    formatedData.date_of_birth=dataset['Date of Birth']
+    formatedData.region=dataset.Region
+    formatedData.zone_subcity=dataset['Zone/Subcity']
+    formatedData.woreda=dataset.Woreda,
+    formatedData.educational_level=dataset['Educational Level']
+    formatedData.economic_sector=dataset['Economic Sector']
+    formatedData.line_of_business=dataset['Line of Business']
+    formatedData.initial_working_capital=dataset['Initial Working Capital']
+    formatedData.source_of_initial_capital=dataset['Source of Initial Capital']
+    formatedData.daily_sales=dataset['Monthly Income'],
+    formatedData.purpose_of_loan=dataset['Purpose of Loan']
+   
+
+    // Utility to format phone number
+    function formatPhoneNumber(phoneNumber) {
+        phoneNumber = String(phoneNumber); // Convert phoneNumber to string
+        if (phoneNumber.startsWith('+251')) {
+            return phoneNumber; // No change needed if already with country code
+        } else if (phoneNumber.startsWith('0')) {
+            return `+251${phoneNumber.substring(1)}`; // Replace leading '0' with '+251'
+        }
+         else if (phoneNumber.startsWith('9')) {
+            return `+251${phoneNumber}`; // Replace leading '0' with '+251'
+        }
+        else if (phoneNumber.startsWith('7')) {
+            return `+251${phoneNumber}`; // Replace leading '0' with '+251'
+        }
+        return phoneNumber; // Return as is if no changes are needed
+    }
+    if (!formatedData.phone_number || !formatedData.account_number || !formatedData.initial_working_capital) {
+        return res.status(200).json({ message: "All fields are required" });
+    }
+    try {
+      
+         formatedData.phone_number = formatPhoneNumber(formatedData.phone_number);
+     
+
+        const [formalCustomer, informalCustomer, prevCustomer, prev_customer] = await Promise.all([
+            kiyyaModel.findOne({
+                where: {
+                    [Op.or]: [
+                        { phone_number: formatedData.phone_number },
+                        { account_number: formatedData.account_number }
+                    ]
+                }
+            }),
+            formalCustomerModel.findOne({
+                where: {
+                    [Op.or]: [
+                        { phone_number: formatedData.phone_number },
+                        { account_no: formatedData.account_number }
+                    ]
+                }
+            }),
+            conversionModel.findOne({
+                where: {
+                    saving_account: formatedData.account_number,
+                    product_type: { [Op.in]: ["Women Informal", "Women formal"] }
+                }
+            }),
+            uniqueCustomerModel.findOne({
+                where: {
+                    saving_account: formatedData.account_number,
+                    product_type: { [Op.in]: ["Women Informal", "Women formal"] }
+                }
+            })
+        ]);
+
+        // If customer already exists in any of the sources, return conflict error
+        if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
+            console.log("Customer Found _--")
+            return res.status(200).json({ message: "Customer already registered" });
+
+        }else{
         // If no existing customer found, register new customer
-        const registering_customer = await kiyyaModel.create(dataset);
+            const registering_customer = await kiyyaModel.create(formatedData);
 
-        // If registration succeeds, return success response
-        if (registering_customer) {
-            return res.status(200).json({ message: "Succeed", data: registering_customer });
-        } else {
-            return res.status(200).json({ message: "Unable to register customer" });
+            // If registration succeeds, return success response
+            if (registering_customer) {
+                return res.status(200).json({ message: "Succeed", data: registering_customer });
+            } else {
+                return res.status(200).json({ message: "Unable to register customer" });
+            }
+
         }
+
+
         
     } catch (err) {
         console.error("An internal error occurred:", err);  // Log error
@@ -150,20 +257,22 @@ const kiyyaFormalCustomer = async (req, res) => {
         // Check if the customer exists in any model
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
             return res.status(200).json({ message: "Customer already registered" });
+        }else{
+                
+            // Register the customer if not found
+            const registeringCustomer = await formalCustomerModel.create({
+                phone_number: formattedPhoneNumber,
+                account_no,
+                ...otherData // Add remaining data from req.body
+            });
+
+            if (registeringCustomer) {
+                return res.status(200).json({ message: "Succeed", data: registeringCustomer });
+            } else {
+                return res.status(200).json({ message: "Registration Failed" });
+            }
         }
 
-        // Register the customer if not found
-        const registeringCustomer = await formalCustomerModel.create({
-            phone_number: formattedPhoneNumber,
-            account_no,
-            ...otherData // Add remaining data from req.body
-        });
-
-        if (registeringCustomer) {
-            return res.status(200).json({ message: "Succeed", data: registeringCustomer });
-        } else {
-            return res.status(200).json({ message: "Registration Failed" });
-        }
 
     } catch (err) {
         console.error("An internal error occurred:", err);
@@ -174,6 +283,7 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 const uniqueCustomerRegisteration=async(req, res)=>{
     const data=req.body
+    console.log("The customer__----_", data)
     // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
@@ -270,17 +380,18 @@ const uniqueCustomerRegisteration=async(req, res)=>{
 
         ]);
 
-        if (formalCustomer || informalCustomer ||prevCustomer, 
-            prev_customer || branchCustomer ||customer_list,noneCode,
+        if (formalCustomer || informalCustomer || prevCustomer || prev_customer || branchCustomer ||customer_list || noneCode ||
             actualData ||conversionCustomer||uniqueCustomers){
                 return res.status(200).json({ message: "Customer already registered" })
             }
             else{
                     // Register the customer if not found
                     data.Saving_Account=data.Saving_account
+                    data.phoneNumber=formattedPhoneNumber
                     const registeringCustomer = await branchCustomerModels.create(data);
 
                     if (registeringCustomer) {
+                        console.log("The registured Customer____----", registeringCustomer)
                         return res.status(200).json({ message: "Succeed", data: registeringCustomer });
                     } else {
                         return res.status(200).json({ message: "Unable to register customer" });
@@ -369,172 +480,16 @@ const InformalKiyyaCustomerUpdate=async(req, res)=>{
 }
 
 
-const paginateModel = async (model, page, limit, whereCondition = {}) => {
-    const offset = (page - 1) * limit;
-
-    // Run both queries concurrently: fetching data and counting total records
-    const [data, totalRecords] = await Promise.all([
-        model.findAll({
-            where: whereCondition, // Optional: to filter data if needed
-            limit: limit,
-            offset: offset,
-        }),
-        model.count({
-            where: whereCondition,
-        }),
-    ]);
-
-    const totalPages = Math.ceil(totalRecords / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    return {
-        data,
-        pagination: {
-            currentPage: page,
-            totalPages: totalPages,
-            totalRecords: totalRecords,
-            nextPage: hasNextPage ? page + 1 : null,
-            prevPage: hasPrevPage ? page - 1 : null,
-            hasNextPage: hasNextPage,
-            hasPrevPage: hasPrevPage,
-        },
-    };
-};
-
-
-
-// const getInformalCustomer = async (req, res) => {
-//     const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-//     const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
-
-//     // Calculate the starting index for pagination
-//     const offset = (page - 1) * limit;
-
-//     try {
-//         // Fetch data with pagination using Sequelize's findAll
-//         const [informalCustomers, totalCustomers] = await Promise.all ([
-//             kiyyaModel.findAll({
-//                     limit: limit,
-//                     offset: offset,
-//                 }),
-//             kiyyaModel.count()])
-
-//         // Count the total number of customers (useful for pagination metadata)
-//         // const totalCustomers = await 
-
-//         if (informalCustomers.length > 0) {
-//             return res.status(200).json({
-//                 message: "Succeed",
-//                 data: informalCustomers,
-//                 pagination: {
-//                     currentPage: page,
-//                     totalPages: Math.ceil(totalCustomers / limit),
-//                     totalCustomers,
-//                 },
-//             });
-//         } else {
-//             return res.status(200).json({ message: "Data doesn't exist" });
-//         }
-//     } catch (error) {
-//         console.error("Error fetching informal customers:", error);
-//         return res.status(500).json({ message: "An internal error has occurred." });
-//     }
-// };
-
-
-// const getInformalKiyyaCustomer = async (req, res) => {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-
-//     try {
-//         // Use the paginate utility for the informalCustomerModel
-//         const result = await paginateModel(kiyyaModel, page, limit);
-
-//         if (result.data.length > 0) {
-//             return res.status(200).json({
-//                 message: "Succeed",
-//                 data: result.data,
-//                 pagination: result.pagination,
-//             });
-//         } else {
-//             return res.status(200).json({ message: "Data doesn't exist" });
-//         }
-//     } catch (error) {
-//         console.error("Error fetching informal customers:", error);
-//         return res.status(500).json({ message: "An internal error has occurred." });
-//     }
-// };
-
-
-
-const getCustomersWithLoans = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
-
-    try {
-        const query = `
-            SELECT customers.*, COUNT(disbursed_loans.id) as loans_count
-            FROM customers
-            INNER JOIN disbursed_loans ON customers.accountId = disbursed_loans.accountId
-            GROUP BY customers.id
-            LIMIT :limit OFFSET :offset;
-        `;
-
-        const customersWithLoans = await sequelize.query(query, {
-            replacements: { limit, offset },
-            type: QueryTypes.SELECT
-        });
-
-        // Assuming we also need to fetch the total count for pagination:
-        const totalCountQuery = `
-            SELECT COUNT(DISTINCT customers.id) as totalCount
-            FROM customers
-            INNER JOIN disbursed_loans ON customers.accountId = disbursed_loans.accountId;
-        `;
-
-        const totalCountResult = await sequelize.query(totalCountQuery, {
-            type: QueryTypes.SELECT
-        });
-
-        const totalRecords = totalCountResult[0].totalCount;
-        const totalPages = Math.ceil(totalRecords / limit);
-        const hasNextPage = page < totalPages;
-        const hasPrevPage = page > 1;
-
-        return res.status(200).json({
-            message: "Succeed",
-            data: customersWithLoans,
-            pagination: {
-                currentPage: page,
-                totalPages: totalPages,
-                totalRecords: totalRecords,
-                nextPage: hasNextPage ? page + 1 : null,
-                prevPage: hasPrevPage ? page - 1 : null,
-                hasNextPage: hasNextPage,
-                hasPrevPage: hasPrevPage,
-            },
-        });
-    } catch (error) {
-        console.error("Error fetching customers with loans:", error);
-        return res.status(500).json({ message: "An internal error has occurred." });
-    }
-};
-
 
 const getDisburesedLoanInformalKiyyaCustomer = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const fetchingparameters=req.body
+    const page = parseInt(fetchingparameters.page) || 1;
+    const limit = parseInt(fetchingparameters.limit) || 10;
     const offset = (page - 1) * limit;
-
-    // 'SOUTH FINFINE',"Bethel Branch"
-    const catagory=['CENTRAL FINFINE','EASTERN FINFINE'];
-    const user_role="Branch User";
-    const userId="570eb243-2581-11ef-be93-0a8448ae1c4d";
-    const account_number="";
-    const phone_number="";
-
+    const catagory=fetchingparameters.catagory
+    const user_role=fetchingparameters.user_role
+    const userId=fetchingparameters.userId
+    const search=fetchingparameters.search
 
     try {
         const query = catagory.length >0 ? querys.loanRecivedQueryPeruserFiltering:querys.loanRecivedQueryPeruser;
@@ -543,8 +498,7 @@ const getDisburesedLoanInformalKiyyaCustomer = async (req, res) => {
             replacements: { 
                 user_role,
                 userId,
-                account_number: account_number || null,  // Use `null` if account_no is not provided
-                phone_number: phone_number || null,  // Use `null` if phone_number is not provided
+                search:search || null,  // Use `null` if phone_number is not provided
                 limit, 
                 offset,
                 catagory
@@ -590,14 +544,14 @@ const getDisburesedLoanInformalKiyyaCustomer = async (req, res) => {
 
 
 const getNone_DisburesedLoanInformalKiyyaCustomer = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const fetchingparameters=req.body
+    const page = parseInt(fetchingparameters.page) || 1;
+    const limit = parseInt(fetchingparameters.limit) || 10;
     const offset = (page - 1) * limit;
-    const catagory=['CENTRAL FINFINE','EASTERN FINFINE'];
-    const user_role="Branch User";
-    const userId="570eb243-2581-11ef-be93-0a8448ae1c4d";
-    const account_number="";
-    const phone_number="";
+    const catagory=fetchingparameters.catagory
+    const user_role=fetchingparameters.user_role
+    const userId=fetchingparameters.userId
+    const search=fetchingparameters.search
 
     try {
         const query = catagory.length>0 ? querys.None_loan_accessedCustomerFiltering:querys.None_loan_accessedCustomer;
@@ -606,8 +560,7 @@ const getNone_DisburesedLoanInformalKiyyaCustomer = async (req, res) => {
             replacements: { 
                 user_role,
                 userId,
-                account_number: account_number || null,  // Use `null` if account_no is not provided
-                phone_number: phone_number || null,  // Use `null` if phone_number is not provided
+                search:search || null,  // Use `null` if phone_number is not provided
                 limit, 
                 offset,
                 catagory
@@ -615,7 +568,6 @@ const getNone_DisburesedLoanInformalKiyyaCustomer = async (req, res) => {
             type: QueryTypes.SELECT
         });
 
-        // Count total records for pagination
         const totalCountQuery =catagory.length>0 ? querys.tolalInformalCustomer_withOutLoanFiltering:querys.tolalInformalCustomer_withOutLoan;
 
         const totalCountResult = await sequelize.query(totalCountQuery, {
@@ -657,15 +609,14 @@ const getNone_DisburesedLoanInformalKiyyaCustomer = async (req, res) => {
 
 
 const getFormalKiyyaCustomerLoanDisbursed = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const fetchingparameters=req.body
+    const page = parseInt(fetchingparameters.page) || 1;
+    const limit = parseInt(fetchingparameters.limit) || 10;
     const offset = (page - 1) * limit;
-// 'SOUTH FINFINE',"Bethel Branch"
-    const catagory=['CENTRAL FINFINE','EASTERN FINFINE'];
-    const user_role="Branch User";
-    const userId="570eb243-2581-11ef-be93-0a8448ae1c4d";
-    const account_no="";
-    const phone_number="";
+    const catagory=fetchingparameters.catagory
+    const user_role=fetchingparameters.user_role
+    const userId=fetchingparameters.userId
+    const search=fetchingparameters.search
     try {
         const query = catagory.length > 0 ? querys.loanRecivedQueryPeruserForFormalKiyyaCustomerFiltering:querys.loanRecivedQueryPeruserForFormalKiyyaCustomer;
 
@@ -673,8 +624,7 @@ const getFormalKiyyaCustomerLoanDisbursed = async (req, res) => {
             replacements: { 
                 user_role,
                 userId,
-                account_no: account_no || null,  // Use `null` if account_no is not provided
-                phone_number: phone_number || null,  // Use `null` if phone_number is not provided
+                search: search || null,  // Use `null` if account_no is not provided
                 limit, 
                 offset,
                 catagory},
@@ -718,15 +668,18 @@ const getFormalKiyyaCustomerLoanDisbursed = async (req, res) => {
 
 
 
+
+
+
 const getNone_DisburesedLoanformalKiyyaCustomer = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const fetchingparameters=req.body
+    const page = parseInt(fetchingparameters.page) || 1;
+    const limit = parseInt(fetchingparameters.limit) || 10;
     const offset = (page - 1) * limit;
-    const catagory=['CENTRAL FINFINE','EASTERN FINFINE'];
-    const user_role="Branch User";
-    const userId="570eb243-2581-11ef-be93-0a8448ae1c4d";
-    const account_no="";
-    const phone_number="";
+    const catagory=fetchingparameters.catagory
+    const user_role=fetchingparameters.user_role
+    const userId=fetchingparameters.userId
+    const search=fetchingparameters.search
     try {
         const query =catagory.length>0 ? querys.noneLoanAccessedFormalKiyyaCustomerFiltering:querys.noneLoanAccessedFormalKiyyaCustomer;
 
@@ -734,8 +687,8 @@ const getNone_DisburesedLoanformalKiyyaCustomer = async (req, res) => {
             replacements: { 
                 user_role,
                 userId,
-                account_no: account_no || null,  // Use `null` if account_no is not provided
-                phone_number: phone_number || null,  // Use `null` if phone_number is not provided
+                search: search || null,  // Use `null` if account_no is not provided
+                // phone_number: phone_number || null,  // Use `null` if phone_number is not provided
                 limit, 
                 offset,
                 catagory
@@ -844,9 +797,72 @@ const formalKiyyaCustomerUpdate=async(req, res)=>{
 
 
 
+
+    const targetAssinged = async (req, res) => {
+        const fetchingparameters=req.body
+        const catagory=fetchingparameters.catagory
+        const user_role=fetchingparameters.role
+        const userId=fetchingparameters.userId
+        const district=fetchingparameters.district
+        const branch_code=fetchingparameters.branch_code
+
+
+        try {;
+            const query=targetQuery.targetQuery
+            const totalActualCountQuery =querys.totalFormalKiyyaCustomerLoanRecived
+            const totalActualInformalquery=querys.totalLoanRecivedCountQuerys
+            const totalCountResult = await sequelize.query(query, {
+                replacements: { 
+                    user_role,
+                    userId,
+                    district,
+                    branch_code,
+                    catagory },
+                type: QueryTypes.SELECT
+            });
+
+            const totalActualCountResult = await sequelize.query(totalActualCountQuery, {
+                replacements: { 
+                    user_role,
+                    userId,
+                    catagory },
+                type: QueryTypes.SELECT
+            });
+
+            const totalActualInformalCountResult = await sequelize.query(totalActualInformalquery, {
+                replacements: { 
+                    user_role,
+                    userId,
+                    catagory },
+                type: QueryTypes.SELECT
+            });
+
+            const totalActualRecords = totalActualCountResult[0].totalCount;
+            const totalActualInformalRecords = totalActualInformalCountResult[0].totalCount;
+            const totalRecords = totalCountResult[0].total_target;
+            // const hasNextPage = page < totalPages;
+            // const hasPrevPage = page > 1;
+    
+            return res.status(200).json({
+                message: "Succeed",
+                data:{
+                totalTarget:totalRecords,
+                totalActualRecord:totalActualRecords,
+                totalActualInformal:totalActualInformalRecords
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching customers with loans:", error);
+            return res.status(500).json({ message: "An internal error has occurred." });
+        }
+    };
+    
+
+
 module.exports={registerInformalCustomerModel, kiyyaFormalCustomer,
                 uniqueCustomerRegisteration,InformalKiyyaCustomerUpdate,
                 formalKiyyaCustomerUpdate, getDisburesedLoanInformalKiyyaCustomer,
                 getNone_DisburesedLoanInformalKiyyaCustomer,getFormalKiyyaCustomerLoanDisbursed,
-                getNone_DisburesedLoanformalKiyyaCustomer
+                getNone_DisburesedLoanformalKiyyaCustomer,
+                registerInformalCustomerModelKifiya,targetAssinged
             }

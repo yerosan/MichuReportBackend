@@ -96,6 +96,8 @@ const loginUser = async (req, res) => {
                             userName:user.dataValues.userName,
                             fullName:user.dataValues.full_Name,
                             role: roles.dataValues.role,
+                            district:user.dataValues.district,
+                            branch_code:user.branch
                             // token
                         }
                     });
@@ -125,6 +127,8 @@ const loginUser = async (req, res) => {
                             userName:crmUser.dataValues.username,
                             fullName: crmRoles.dataValues.full_name,
                             role: crmRoles.dataValues.role,
+                            district:"HEAD OFFICE",
+                            branch_code:crmUser.dataValues.employe_id
                             // token
                         }
                     });

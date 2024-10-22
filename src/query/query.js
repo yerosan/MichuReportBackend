@@ -56,9 +56,8 @@ const loanRecivedQueryPeruser=`
 
     WHERE kiyya_customer.userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
     AND kiyya_customer.registered_date >= '2024-10-01'
-
-    
-        -- Role-based filtering
+        
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
@@ -66,19 +65,25 @@ const loanRecivedQueryPeruser=`
             :user_role = 'Branch User'
             AND kiyya_customer.userId = :userId
         )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
+        )
     )
-
     -- Dynamic filters based on input
     -- Search by account_no if provided
     AND (
-        :account_number IS NULL OR kiyya_customer.account_number = :account_number
-      )
-
-    -- Search by phone_number if provided
-    AND (
-        :phone_number IS NULL OR kiyya_customer.phone_number = :phone_number
+        :search IS NULL OR 
+        kiyya_customer.account_number = :search OR 
+        kiyya_customer.phone_number = :search
     )
-
 
     AND NOT EXISTS (
         SELECT 1
@@ -158,26 +163,33 @@ const loanRecivedQueryPeruserFiltering=`
     AND kiyya_customer.registered_date >= '2024-10-01'
     
 
-
+        
     -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
         (   -- Branch user can only access records within their branch
             :user_role = 'Branch User'
-            AND kiyya_customer.account_number = :userId
+            AND kiyya_customer.userId = :userId
+        )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
         )
     )
-
     -- Dynamic filters based on input
     -- Search by account_no if provided
     AND (
-        :account_number IS NULL OR kiyya_customer.account_number = :account_number
-    )
-
-    -- Search by phone_number if provided
-    AND (
-        :phone_number IS NULL OR kiyya_customer.phone_number = :phone_number
+        :search IS NULL OR 
+        kiyya_customer.account_number = :search OR 
+        kiyya_customer.phone_number = :search
     )
 
     AND (
@@ -240,7 +252,7 @@ const None_loan_accessedCustomer=`
         WHERE kiyya_customer.registered_date >= '2024-10-01'
         AND kiyya_customer.userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
 
-        
+           
         -- Role-based filtering
         AND (
             :user_role = 'Admin'  -- Admin can access all records
@@ -249,17 +261,24 @@ const None_loan_accessedCustomer=`
                 :user_role = 'Branch User'
                 AND kiyya_customer.userId = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
-
         -- Dynamic filters based on input
         -- Search by account_no if provided
         AND (
-            :account_number IS NULL OR kiyya_customer.account_number = :account_number
-        )
-
-        -- Search by phone_number if provided
-        AND (
-            :phone_number IS NULL OR kiyya_customer.phone_number = :phone_number
+            :search IS NULL OR 
+            kiyya_customer.account_number = :search OR 
+            kiyya_customer.phone_number = :search
         )
         -- Check that the customer is not found in conversiondata by account_number or phone_number
         AND NOT EXISTS (
@@ -314,7 +333,6 @@ const None_loan_accessedCustomerFiltering=`
         WHERE kiyya_customer.registered_date >= '2024-10-01'
         AND kiyya_customer.userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
         AND kiyya_customer.registered_date >= '2024-10-01'
-
         
         -- Role-based filtering
         AND (
@@ -324,17 +342,24 @@ const None_loan_accessedCustomerFiltering=`
                 :user_role = 'Branch User'
                 AND kiyya_customer.userId = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
-
         -- Dynamic filters based on input
         -- Search by account_no if provided
         AND (
-            :account_number IS NULL OR kiyya_customer.account_number = :account_number
-        )
-
-        -- Search by phone_number if provided
-        AND (
-            :phone_number IS NULL OR kiyya_customer.phone_number = :phone_number
+            :search IS NULL OR 
+            kiyya_customer.account_number = :search OR 
+            kiyya_customer.phone_number = :search
         )
             
         AND (
@@ -402,13 +427,24 @@ const totalLoanRecivedCountQuerys=`
     AND kiyya_customer.registered_date >= '2024-10-01'
 
     
-        -- Role-based filtering
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
         (   -- Branch user can only access records within their branch
             :user_role = 'Branch User'
-            AND women_product_customer.crm_id = :userId
+            AND kiyya_customer.userId = :userId
+        )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
         )
     )
 
@@ -476,13 +512,24 @@ const totalLoanRecivedCountQuerysFiltering=`
     AND kiyya_customer.registered_date >= '2024-10-01'
 
     
-        -- Role-based filtering
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
         (   -- Branch user can only access records within their branch
             :user_role = 'Branch User'
             AND kiyya_customer.userId = :userId
+        )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
         )
     )
     AND (
@@ -534,13 +581,24 @@ const tolalInformalCustomer_withOutLoan=`
         WHERE kiyya_customer.registered_date >= '2024-10-01'
         AND kiyya_customer.userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
         
-            -- Role-based filtering
+        -- Role-based filtering
         AND (
             :user_role = 'Admin'  -- Admin can access all records
             OR 
             (   -- Branch user can only access records within their branch
                 :user_role = 'Branch User'
                 AND kiyya_customer.userId = :userId
+            )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
             )
         )
         -- Check that the customer is not found in conversiondata by account_number or phone_number
@@ -584,7 +642,6 @@ const tolalInformalCustomer_withOutLoanFiltering=`
             ON crm_user.employe_id = crm_list.employe_id
         WHERE kiyya_customer.registered_date >= '2024-10-01'
         AND kiyya_customer.userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
-
         
         -- Role-based filtering
         AND (
@@ -593,6 +650,17 @@ const tolalInformalCustomer_withOutLoanFiltering=`
             (   -- Branch user can only access records within their branch
                 :user_role = 'Branch User'
                 AND kiyya_customer.userId = :userId
+            )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
             )
         )
         AND (
@@ -661,7 +729,7 @@ const loanRecivedQueryPeruserForFormalKiyyaCustomer=`
     LEFT JOIN filtered_unique_intersection 
         ON women_product_customer.account_no = filtered_unique_intersection.saving_account
     LEFT JOIN user_infos 
-        ON women_product_customer.crm_id = user_infos.userId  
+        ON women_product_customer.crm_id  = user_infos.userId  
     LEFT JOIN crm_user
         ON women_product_customer.crm_id = crm_user.crm_id 
     LEFT JOIN crm_list
@@ -675,7 +743,7 @@ const loanRecivedQueryPeruserForFormalKiyyaCustomer=`
     WHERE women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
     AND women_product_customer.registered_date >= '2024-10-01'
     
-        -- Role-based filtering
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
@@ -683,19 +751,26 @@ const loanRecivedQueryPeruserForFormalKiyyaCustomer=`
             :user_role = 'Branch User'
             AND women_product_customer.crm_id = :userId
         )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
+        )
     )
 
     -- Dynamic filters based on input
     -- Search by account_no if provided
     AND (
-        :account_no IS NULL OR women_product_customer.account_no = :account_no
+        :search IS NULL OR 
+        --women_product_customer.account_no = :search OR 
+        women_product_customer.phone_number = :search
     )
-
-    -- Search by phone_number if provided
-    AND (
-        :phone_number IS NULL OR women_product_customer.phone_number = :phone_number
-    )
-
     -- AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
     AND NOT EXISTS (
         SELECT 1
@@ -775,8 +850,8 @@ const loanRecivedQueryPeruserForFormalKiyyaCustomerFiltering=`
 
     WHERE women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
     AND women_product_customer.registered_date >= '2024-10-01'
-
-        -- Role-based filtering
+        
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
@@ -784,17 +859,24 @@ const loanRecivedQueryPeruserForFormalKiyyaCustomerFiltering=`
             :user_role = 'Branch User'
             AND women_product_customer.crm_id = :userId
         )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
+        )
     )
-
     -- Dynamic filters based on input
     -- Search by account_no if provided
     AND (
-        :account_no IS NULL OR women_product_customer.account_no = :account_no
-    )
-
-    -- Search by phone_number if provided
-    AND (
-        :phone_number IS NULL OR women_product_customer.phone_number = :phone_number
+        :search IS NULL OR 
+        --women_product_customer.account_no = :search OR 
+        women_product_customer.phone_number = :search
     )
 
     -- AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
@@ -868,15 +950,25 @@ const totalFormalKiyyaCustomerLoanRecived=`
 
     WHERE women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
     AND women_product_customer.registered_date >= '2024-10-01'
-
-    
-        -- Role-based filtering
+        
+    -- Role-based filtering
     AND (
         :user_role = 'Admin'  -- Admin can access all records
         OR 
         (   -- Branch user can only access records within their branch
             :user_role = 'Branch User'
             AND women_product_customer.crm_id = :userId
+        )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
         )
     )
     -- AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
@@ -953,6 +1045,17 @@ const totalFormalKiyyaCustomerLoanRecivedFiltering=`
             :user_role = 'Branch User'
             AND women_product_customer.crm_id = :userId
         )
+        OR
+        (
+            :user_role = 'District User'
+            AND COALESCE(user_infos.district, crm_list.sub_process) = 
+            (
+                SELECT district
+                FROM user_infos
+                WHERE userId = :userId
+                LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+            )
+        )
     )
 
     -- AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
@@ -1013,9 +1116,10 @@ const noneLoanAccessedFormalKiyyaCustomer=`
         ON crm_user.employe_id = crm_list.employe_id 
         WHERE women_product_customer.registered_date >= '2024-10-01'
         AND women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
-        AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
+        -- AND COALESCE(user_infos.district, crm_list.sub_process) = :catagory  -- Filter by dynamic category
 
             
+        
         -- Role-based filtering
         AND (
             :user_role = 'Admin'  -- Admin can access all records
@@ -1024,17 +1128,24 @@ const noneLoanAccessedFormalKiyyaCustomer=`
                 :user_role = 'Branch User'
                 AND women_product_customer.crm_id = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
-
         -- Dynamic filters based on input
         -- Search by account_no if provided
         AND (
-            :account_no IS NULL OR women_product_customer.account_no = :account_no
-        )
-
-        -- Search by phone_number if provided
-        AND (
-            :phone_number IS NULL OR women_product_customer.phone_number = :phone_number
+            :search IS NULL OR 
+            --women_product_customer.account_no = :search OR 
+            women_product_customer.phone_number = :search
         )
 
         
@@ -1090,8 +1201,7 @@ const noneLoanAccessedFormalKiyyaCustomerFiltering=`
         ON crm_user.employe_id = crm_list.employe_id 
         WHERE women_product_customer.registered_date >= '2024-10-01'
         AND women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
-
-        
+     
         -- Role-based filtering
         AND (
             :user_role = 'Admin'  -- Admin can access all records
@@ -1100,19 +1210,25 @@ const noneLoanAccessedFormalKiyyaCustomerFiltering=`
                 :user_role = 'Branch User'
                 AND women_product_customer.crm_id = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
-
         -- Dynamic filters based on input
         -- Search by account_no if provided
         AND (
-            :account_no IS NULL OR women_product_customer.account_no = :account_no
+            :search IS NULL OR 
+            --women_product_customer.account_no = :search OR 
+            women_product_customer.phone_number = :search
         )
-
-        -- Search by phone_number if provided
-        AND (
-            :phone_number IS NULL OR women_product_customer.phone_number = :phone_number
-        )
-    
         AND (
             COALESCE(user_infos.full_name, crm_list.full_name) IN (:catagory)  -- Dynamic category filter (supports a list)
             OR
@@ -1171,6 +1287,17 @@ const totalkiyyaFromalCustomer_withoutLoan=`
                 :user_role = 'Branch User'
                 AND women_product_customer.crm_id = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
 
         -- Check that the customer is not found in conversiondata by account_number or phone_number
@@ -1215,7 +1342,7 @@ const totalkiyyaFromalCustomer_withoutLoanFiltering=`
         AND women_product_customer.crm_id != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'
 
         
-            -- Role-based filtering
+        -- Role-based filtering
         AND (
             :user_role = 'Admin'  -- Admin can access all records
             OR 
@@ -1223,8 +1350,18 @@ const totalkiyyaFromalCustomer_withoutLoanFiltering=`
                 :user_role = 'Branch User'
                 AND women_product_customer.crm_id = :userId
             )
+            OR
+            (
+                :user_role = 'District User'
+                AND COALESCE(user_infos.district, crm_list.sub_process) = 
+                (
+                    SELECT district
+                    FROM user_infos
+                    WHERE userId = :userId
+                    LIMIT 1  -- Ensure you only get one district, assuming userId is unique in user_infos
+                )
+            )
         )
-    
         AND (
             COALESCE(user_infos.full_name, crm_list.full_name) IN (:catagory)  -- Dynamic category filter (supports a list)
             OR
