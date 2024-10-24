@@ -90,6 +90,10 @@ const registerInformalCustomerModel = async (req, res) => {
 
 
     } catch (err) {
+        // Handle database unique constraint error (duplicate entry)
+        if (err.name === 'SequelizeUniqueConstraintError') {
+            return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
+        }
         console.error("An internal error occurred:", err);  // Log error
         return res.status(500).json({ message: "An internal error occurred" });
     }
@@ -275,6 +279,10 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 
     } catch (err) {
+        // Handle database unique constraint error (duplicate entry)
+        if (err.name === 'SequelizeUniqueConstraintError') {
+            return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
+        }
         console.error("An internal error occurred:", err);
         return res.status(500).json({ message: "An internal error has occurred." });
     }
@@ -400,6 +408,10 @@ const uniqueCustomerRegisteration=async(req, res)=>{
 
 
         }catch(err){
+            // Handle database unique constraint error (duplicate entry)
+            if (err.name === 'SequelizeUniqueConstraintError') {
+                return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
+            }
             console.log("Error:",err)
             return res.status(500).json({message:"An internal error has occurred."})
         }
