@@ -1,4 +1,5 @@
 const kiyyaModel = require("../models/kiyya_customer");
+const ineligibleModel=require("../models/ineligibleKiyya_customer")
 const formalCustomerModel = require("../models/womenProduct");
 const uniqueCustomerModel = require("../models/uniqueIntersection");
 const actualMode = require("../models/actual");
@@ -15,9 +16,13 @@ const { escape } = require("mysql2");
 const { QueryTypes } = require('sequelize');
 const querys=require("../query/query")
 const targetQuery=require("../query/targetQuery")
-
+const kifiyaUrl=require("../config/config")
+const axios=require("axios")
+const nationalModel=require("../models/nationalData")
 const sequelize = require("../db/db");
-// const Sequelize=require("sequelize")
+const { response } = require("express");
+const kiyyaCustomerStatus=require("../models/kiyya_customer_status")
+
 const registerInformalCustomerModel = async (req, res) => {
     const dataset= req.body;
     // Utility to format phone number
@@ -29,8 +34,6 @@ const registerInformalCustomerModel = async (req, res) => {
         }
         return phoneNumber; // Return as is if no changes are needed
     }
-
-    // Validation: Ensure all required fields are provided
     if (!dataset.phone_number || !dataset.account_number || !dataset.initial_working_capital) {
         return res.status(200).json({ message: "All fields are required" });
     }
@@ -73,24 +76,61 @@ const registerInformalCustomerModel = async (req, res) => {
 
         // If customer already exists in any of the sources, return conflict error
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
+            console.log("The found-------",formalCustomer, informalCustomer,prevCustomer,prev_customer)
             return res.status(200).json({ message: "Customer already registered" });
         }else{
+            paylod={
+                "phone_number":dataset.phone_number,
+                "educational_level":dataset.educational_level,
+                "account_number":dataset.account_number,
+                "gender":dataset.gender,
+                "marital_status":dataset.marital_status,
+                "date_of_birth":dataset.date_of_birth,
+                "economic_sector":dataset.economic_sector,
+                "initial_working_capital":dataset.initial_working_capital,
+                "source_of_initial_capital":dataset.source_of_initial_capital,
+                "daily_sales":dataset.daily_sales,
+                }
+            const eligiblityCheck= await axios.post("http://10.12.53.30:6060/michu_kiya_scorecard/V1.0.0", paylod)
+            if(eligiblityCheck.status==200){
+                if(eligiblityCheck.data.phoneNumber==dataset.phone_number){
+                   
+                    const customerStatus={}
+                    customerStatus.userId=dataset.userId
+                    customerStatus.account_number=dataset.account_number
+                    customerStatus.phone_number=dataset.phone_number
+                    customerStatus.total_score=eligiblityCheck.data.total_score
+                    customerStatus.eligible=eligiblityCheck.data.eligible
+                    if (eligiblityCheck.data.eligible){
+                        const registering_customer = await kiyyaModel.create(dataset);
+                        const customer_status= await kiyyaCustomerStatus.create(customerStatus)
+                        if (registering_customer) {
+                            return res.status(200).json({ message: "Succeed", data: registering_customer });
+                        } else {
+                            return res.status(200).json({ message: "Unable to register customer" });
+                        }
+                    }
+                    else{
+                        const registering_customer = await ineligibleModel.create(dataset);
+                        const customer_status= await kiyyaCustomerStatus.create(customerStatus)
+                        if (registering_customer) {
+                            return res.status(200).json({ message: "Customer is uneligible for the product due to insufficient customer history.", data: registering_customer });
+                        } else {
+                            return res.status(200).json({ message: "Unable to register customer" });
+                        }
+                    }
 
-           // If no existing customer found, register new customer
-            const registering_customer = await kiyyaModel.create(dataset);
 
-            // If registration succeeds, return success response
-            if (registering_customer) {
-                return res.status(200).json({ message: "Succeed", data: registering_customer });
-            } else {
-                return res.status(200).json({ message: "Unable to register customer" });
+                }
             }
-        
         }
 
 
     } catch (err) {
-        // Handle database unique constraint error (duplicate entry)
+        console.log("---------------------------the error----------------", err)
+        if(err.name==='AxiosError'){
+            return res.status(200).json({ message: err.response.data.error});
+        }
         if (err.name === 'SequelizeUniqueConstraintError') {
             return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
         }
@@ -101,7 +141,89 @@ const registerInformalCustomerModel = async (req, res) => {
 
 
 
+const nationalId = async (req, res) => {
+    try {
+      const nationalIdData = req.body;
+      const url = kifiyaUrl.kifiyaUrl;
+      
+      const response = await axios.post(url, nationalIdData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 5000,
+      });
+      if (response.data) {
+        return res.status(200).json({
+          data: response.data
+        });
+      }
+    } catch (error) {
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data
+      });
+  
+      return res.status(500).json({
+        message: "Error processing request",
+        error: error.message
+      });
+    }
+  };  
 
+
+  const NationalIdUser = async (req, res) => {
+    try {
+      const nationalIdData = req.body;
+      const url=kifiyaUrl.kifiyakycUrl
+      const response = await axios.post(url, nationalIdData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // timeout: 5000,
+      });
+      if (response.data) {
+        return res.status(200).json({
+          data: response.data
+        });
+      }
+    } catch (error) {
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data
+      });
+  
+      return res.status(500).json({
+        message: "Error processing request",
+        error: error.message
+      });
+    }
+  };  
+
+
+
+const nationalData=async(req, res)=>{
+    const nationalIdData = req.body;
+
+    if(!nationalIdData.nationalId || !nationalIdData.customerPhone){
+        return res.status(200).json({message:"National Id and phone number required"})
+    }else{
+        try{
+            nationalModel.sync()
+            const response = await nationalModel.create(nationalIdData)
+              if (response) {
+                return res.status(200).json({
+                  message:"Succeed",
+                  data: response
+                });
+              }
+        }catch(error){
+            console.log("The error", error)
+        }
+    }
+
+}
 
 const registerInformalCustomerModelKifiya = async (req, res) => {
     const dataset= req.body;
@@ -128,19 +250,19 @@ const registerInformalCustomerModelKifiya = async (req, res) => {
 
     // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
-        phoneNumber = String(phoneNumber); // Convert phoneNumber to string
+        phoneNumber = String(phoneNumber);  
         if (phoneNumber.startsWith('+251')) {
-            return phoneNumber; // No change needed if already with country code
+            return phoneNumber;  
         } else if (phoneNumber.startsWith('0')) {
-            return `+251${phoneNumber.substring(1)}`; // Replace leading '0' with '+251'
+            return `+251${phoneNumber.substring(1)}`;  
         }
          else if (phoneNumber.startsWith('9')) {
-            return `+251${phoneNumber}`; // Replace leading '0' with '+251'
+            return `+251${phoneNumber}`;  
         }
         else if (phoneNumber.startsWith('7')) {
-            return `+251${phoneNumber}`; // Replace leading '0' with '+251'
+            return `+251${phoneNumber}`;  
         }
-        return phoneNumber; // Return as is if no changes are needed
+        return phoneNumber;  
     }
     if (!formatedData.phone_number || !formatedData.account_number || !formatedData.initial_working_capital) {
         return res.status(200).json({ message: "All fields are required" });
@@ -211,22 +333,21 @@ const registerInformalCustomerModelKifiya = async (req, res) => {
 const kiyyaFormalCustomer = async (req, res) => {
     const { phone_number, account_no, ...otherData } = req.body;
 
-    // Utility to format phone number
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
-            return phoneNumber; // No change needed if already with country code
+            return phoneNumber; 
         } else if (phoneNumber.startsWith('0')) {
-            return `+251${phoneNumber.substring(1)}`; // Replace leading '0' with '+251'
+            return `+251${phoneNumber.substring(1)}`;  
         }
-        return phoneNumber; // Return as is if no changes are needed
+        return phoneNumber; 
     }
 
     try {
-        // Format phone number
+      
         const formattedPhoneNumber = formatPhoneNumber(phone_number);
             
 
-        // Query to check if the customer already exists
+    
         const [formalCustomer, informalCustomer, prevCustomer, prev_customer] = await Promise.all([
             kiyyaModel.findOne({
                 where: {
@@ -258,16 +379,16 @@ const kiyyaFormalCustomer = async (req, res) => {
             })
         ]);
 
-        // Check if the customer exists in any model
+      
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
             return res.status(200).json({ message: "Customer already registered" });
         }else{
                 
-            // Register the customer if not found
+        
             const registeringCustomer = await formalCustomerModel.create({
                 phone_number: formattedPhoneNumber,
                 account_no,
-                ...otherData // Add remaining data from req.body
+                ...otherData  
             });
 
             if (registeringCustomer) {
@@ -279,7 +400,7 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 
     } catch (err) {
-        // Handle database unique constraint error (duplicate entry)
+     
         if (err.name === 'SequelizeUniqueConstraintError') {
             return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
         }
@@ -291,15 +412,14 @@ const kiyyaFormalCustomer = async (req, res) => {
 
 const uniqueCustomerRegisteration=async(req, res)=>{
     const data=req.body
-    console.log("The customer__----_", data)
-    // Utility to format phone number
+     
     function formatPhoneNumber(phoneNumber) {
         if (phoneNumber.startsWith('+251')) {
-            return phoneNumber; // No change needed if already with country code
+            return phoneNumber;  
         } else if (phoneNumber.startsWith('0')) {
-            return `+251${phoneNumber.substring(1)}`; // Replace leading '0' with '+251'
+            return `+251${phoneNumber.substring(1)}`; 
         }
-        return phoneNumber; // Return as is if no changes are needed
+        return phoneNumber; 
     }
     
     if (!data.phoneNumber || ! data.Saving_account){
@@ -393,13 +513,13 @@ const uniqueCustomerRegisteration=async(req, res)=>{
                 return res.status(200).json({ message: "Customer already registered" })
             }
             else{
-                    // Register the customer if not found
+                     
                     data.Saving_Account=data.Saving_account
                     data.phoneNumber=formattedPhoneNumber
                     const registeringCustomer = await branchCustomerModels.create(data);
 
                     if (registeringCustomer) {
-                        console.log("The registured Customer____----", registeringCustomer)
+                          
                         return res.status(200).json({ message: "Succeed", data: registeringCustomer });
                     } else {
                         return res.status(200).json({ message: "Unable to register customer" });
@@ -408,7 +528,7 @@ const uniqueCustomerRegisteration=async(req, res)=>{
 
 
         }catch(err){
-            // Handle database unique constraint error (duplicate entry)
+             
             if (err.name === 'SequelizeUniqueConstraintError') {
                 return res.status(200).json({ message: "Customer with this phone number or account number already exists" });
             }
@@ -426,16 +546,14 @@ const uniqueCustomerRegisteration=async(req, res)=>{
 
 const InformalKiyyaCustomerUpdate=async(req, res)=>{
    const updatedData=req.body
-
-
-   // Validation: Ensure all required fields are provided
+      
      if (!updatedData.phone_number || !updatedData.account_number || !updatedData.initial_working_capital) {
        return res.status(200).json({ message: "All fields are required" });
         }
 
         try {
         
-            // dataset.phone_number = formatPhoneNumber(dataset.phone_number);
+            
         
 
             const [informalCustomer,formalCustomer, prevCustomer, prev_customer] = await Promise.all([
@@ -477,7 +595,7 @@ const InformalKiyyaCustomerUpdate=async(req, res)=>{
             // If no existing customer found, register new customer
             const updatingData = await kiyyaModel.update(updatedData, {where:{kiyya_id:updatedData.dataValues.kiyya_id}});
 
-            // If registration succeeds, return success response
+            
             if (updatingData) {
                 return res.status(200).json({ message: "Succeed", data: updatingData });
             } else {
@@ -805,7 +923,7 @@ const formalKiyyaCustomerUpdate=async(req, res)=>{
         return res.status(500).json({ message: "An internal error has occurred." });
     }
     }
-
+   
 
 
 
@@ -876,5 +994,6 @@ module.exports={registerInformalCustomerModel, kiyyaFormalCustomer,
                 formalKiyyaCustomerUpdate, getDisburesedLoanInformalKiyyaCustomer,
                 getNone_DisburesedLoanInformalKiyyaCustomer,getFormalKiyyaCustomerLoanDisbursed,
                 getNone_DisburesedLoanformalKiyyaCustomer,
-                registerInformalCustomerModelKifiya,targetAssinged
+                registerInformalCustomerModelKifiya,targetAssinged,
+                nationalId, NationalIdUser,nationalData
             }

@@ -13,6 +13,9 @@ router.post ("/getFromalKiyyaCustomerAccessedLoan", customerMOdel.getFormalKiyya
 router.post("/getFromalKiyyaCustomerNotAccessedLoan", customerMOdel.getNone_DisburesedLoanformalKiyyaCustomer)
 router.post("/kifiyaData",customerMOdel.registerInformalCustomerModelKifiya)
 router.post("/targetAssigned", customerMOdel.targetAssinged)
+router.post("/nationalIds", customerMOdel.nationalId)
+router.post("/nationalIdUser", customerMOdel.NationalIdUser)
+router.post("/nationalData", customerMOdel.nationalData)
 
 
 module.exports=router

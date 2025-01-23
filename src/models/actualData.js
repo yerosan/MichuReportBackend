@@ -1,4 +1,4 @@
-const sequelize = require("../db/db");  // Your existing database connection
+const sequelize = require("../db/db");  
 const Sequelize = require("sequelize");
 
 const actualDataModel = sequelize.define("actualdata", {

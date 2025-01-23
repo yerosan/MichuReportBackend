@@ -1,8 +1,4 @@
 const appUrl="http://localhost:4050"
-
-module.exports= appUrl
-
-
-// const appUrl="http://54.228.210.157:4050"
-
-// module.exports= appUrl
+const kifiyaUrl="https://faydaintegration.dev.kifiya.et/getRequestData"
+const kifiyakycUrl="https://faydaintegration.dev.kifiya.et/getEkycData"
+module.exports= {appUrl, kifiyaUrl,kifiyakycUrl}

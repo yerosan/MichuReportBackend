@@ -1,6 +1,7 @@
 const express=require("express")
 const cors=require("cors")
 const appUrl=require("./src/config/config")
+const kifiyaUrl=require("./src/config/config")
 const userRoute=require("./src/route/userRoute")
 const customerRegisterRoute=require("./src/route/registuringCustomer")
 // const roleRoute=require("./src/route/roleRoute")
@@ -17,8 +18,10 @@ michuReport.authenticate().then(()=>{
     console.log("An internal error",error)
 })
 
+const allowedOrigins = [appUrl, kifiyaUrl, '*']
+
 app.use(cors({
-    origin: `${appUrl}`, 
+    origin: allowedOrigins, 
     credentials: true 
 })
 
