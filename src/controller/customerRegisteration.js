@@ -76,7 +76,6 @@ const registerInformalCustomerModel = async (req, res) => {
 
         // If customer already exists in any of the sources, return conflict error
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
-            console.log("The found-------",formalCustomer, informalCustomer,prevCustomer,prev_customer)
             return res.status(200).json({ message: "Customer already registered" });
         }else{
             paylod={
@@ -91,17 +90,22 @@ const registerInformalCustomerModel = async (req, res) => {
                 "source_of_initial_capital":dataset.source_of_initial_capital,
                 "daily_sales":dataset.daily_sales,
                 }
-            const eligiblityCheck= await axios.post("http://10.12.53.30:6060/michu_kiya_scorecard/V1.0.0", paylod)
+            const payloadData={
+                "serviceId": 3,
+                "orgId": "MiQXSS",
+                dynamicData:paylod
+            }
+            const eligiblityCheck= await axios.post("http://10.12.53.35:8889/api/v1/score", payloadData)
             if(eligiblityCheck.status==200){
-                if(eligiblityCheck.data.phoneNumber==dataset.phone_number){
+                if(eligiblityCheck.data.modelResponse.phoneNumber==dataset.phone_number){
                    
                     const customerStatus={}
                     customerStatus.userId=dataset.userId
                     customerStatus.account_number=dataset.account_number
                     customerStatus.phone_number=dataset.phone_number
-                    customerStatus.total_score=eligiblityCheck.data.total_score
-                    customerStatus.eligible=eligiblityCheck.data.eligible
-                    if (eligiblityCheck.data.eligible){
+                    customerStatus.total_score=eligiblityCheck.data.modelResponse.total_score
+                    customerStatus.eligible=eligiblityCheck.data.modelResponse.eligible
+                    if (eligiblityCheck.data.modelResponse.eligible){
                         const registering_customer = await kiyyaModel.create(dataset);
                         const customer_status= await kiyyaCustomerStatus.create(customerStatus)
                         if (registering_customer) {
@@ -127,7 +131,6 @@ const registerInformalCustomerModel = async (req, res) => {
 
 
     } catch (err) {
-        console.log("---------------------------the error----------------", err)
         if(err.name==='AxiosError'){
             return res.status(200).json({ message: err.response.data.error});
         }
