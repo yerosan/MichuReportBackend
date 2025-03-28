@@ -78,56 +78,56 @@ const registerInformalCustomerModel = async (req, res) => {
         if (formalCustomer || informalCustomer || prevCustomer || prev_customer) {
             return res.status(200).json({ message: "Customer already registered" });
         }else{
-            paylod={
-                "phone_number":dataset.phone_number,
-                "educational_level":dataset.educational_level,
-                "account_number":dataset.account_number,
-                "gender":dataset.gender,
-                "marital_status":dataset.marital_status,
-                "date_of_birth":dataset.date_of_birth,
-                "economic_sector":dataset.economic_sector,
-                "initial_working_capital":dataset.initial_working_capital,
-                "source_of_initial_capital":dataset.source_of_initial_capital,
-                "daily_sales":dataset.daily_sales,
-                }
-            const payloadData={
-                "serviceId": 3,
-                "orgId": "MiQXSS",
-                dynamicData:paylod
-            }
-            const eligiblityCheck= await axios.post("http://10.12.53.35:8889/api/v1/score", payloadData)
-            if(eligiblityCheck.status==200){
-                if(eligiblityCheck.data.modelResponse.phoneNumber==dataset.phone_number){
+            // paylod={
+            //     "phone_number":dataset.phone_number,
+            //     "educational_level":dataset.educational_level,
+            //     "account_number":dataset.account_number,
+            //     "gender":dataset.gender,
+            //     "marital_status":dataset.marital_status,
+            //     "date_of_birth":dataset.date_of_birth,
+            //     "economic_sector":dataset.economic_sector,
+            //     "initial_working_capital":dataset.initial_working_capital,
+            //     "source_of_initial_capital":dataset.source_of_initial_capital,
+            //     "daily_sales":dataset.daily_sales,
+            //     }
+            // const payloadData={
+            //     "serviceId": 3,
+            //     "orgId": "MiQXSS",
+            //     dynamicData:paylod
+            // }
+            // const eligiblityCheck= await axios.post("http://10.12.53.35:8889/api/v1/score", payloadData)
+            // if(eligiblityCheck.status==200){
+            //     if(eligiblityCheck.data.modelResponse.phoneNumber==dataset.phone_number){
                    
-                    const customerStatus={}
-                    customerStatus.userId=dataset.userId
-                    customerStatus.account_number=dataset.account_number
-                    customerStatus.phone_number=dataset.phone_number
-                    customerStatus.total_score=eligiblityCheck.data.modelResponse.total_score
-                    customerStatus.eligible=eligiblityCheck.data.modelResponse.eligible
-                    if (eligiblityCheck.data.modelResponse.eligible){
+            //         const customerStatus={}
+            //         customerStatus.userId=dataset.userId
+            //         customerStatus.account_number=dataset.account_number
+            //         customerStatus.phone_number=dataset.phone_number
+            //         customerStatus.total_score=eligiblityCheck.data.modelResponse.total_score
+            //         customerStatus.eligible=eligiblityCheck.data.modelResponse.eligible
+            //         if (eligiblityCheck.data.modelResponse.eligible){
                         const registering_customer = await kiyyaModel.create(dataset);
-                        const customer_status= await kiyyaCustomerStatus.create(customerStatus)
+                        // const customer_status= await kiyyaCustomerStatus.create(customerStatus)
                         if (registering_customer) {
                             return res.status(200).json({ message: "Succeed", data: registering_customer });
                         } else {
                             return res.status(200).json({ message: "Unable to register customer" });
                         }
-                    }
-                    else{
-                        const registering_customer = await ineligibleModel.create(dataset);
-                        const customer_status= await kiyyaCustomerStatus.create(customerStatus)
-                        if (registering_customer) {
-                            return res.status(200).json({ message: "Customer is uneligible for the product due to insufficient customer history.", data: registering_customer });
-                        } else {
-                            return res.status(200).json({ message: "Unable to register customer" });
-                        }
-                    }
+                    // }
+                    // else{
+                    //     const registering_customer = await ineligibleModel.create(dataset);
+                    //     const customer_status= await kiyyaCustomerStatus.create(customerStatus)
+                    //     if (registering_customer) {
+                    //         return res.status(200).json({ message: "Customer is uneligible for the product due to insufficient customer history.", data: registering_customer });
+                    //     } else {
+                    //         return res.status(200).json({ message: "Unable to register customer" });
+                    //     }
+                    // }
 
 
                 }
-            }
-        }
+        //     }
+        // }
 
 
     } catch (err) {
